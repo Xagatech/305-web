@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COMPAS — เมื่ออัลกอริทึมตัดสินชะตามนุษย์</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400&family=IBM+Plex+Mono:wght@300;400;500;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0e0c;
+  --bg-elevated: #1a1816;
+  --ink: #f2ede3;
+  --ink-dim: #a8a196;
+  --ink-faint: #6b6559;
+  --paper: #efe8da;
+  --paper-dark: #d9d0bc;
+  --accent: #c8352a;
+  --accent-dim: #8a2820;
+  --accent-bright: #ff4a3d;
+  --warn: #e8a33e;
+  --rule: #2a2824;
+  --rule-light: #3a3631;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans Thai', 'Fraunces', serif;
+  font-weight: 400;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* Grain overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 100;
+  mix-blend-mode: overlay;
+}
+
+/* =========== HERO =========== */
+.hero {
+  min-height: 100vh;
+  position: relative;
+  padding: 3rem 2rem 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.hero-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+  background-size: 80px 80px;
+  opacity: 0.3;
+  mask-image: radial-gradient(ellipse at 30% 40%, black 0%, transparent 70%);
+}
+
+.hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  position: relative;
+  z-index: 2;
+}
+
+.hero-top .left {
+  display: flex;
+  gap: 2rem;
+}
+
+.hero-top .dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--accent-bright);
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.hero-main {
+  position: relative;
+  z-index: 2;
+  max-width: 1400px;
+  margin: auto 0;
+}
+
+.hero-case {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  color: var(--accent-bright);
+  margin-bottom: 2rem;
+  padding-left: 1rem;
+  border-left: 3px solid var(--accent);
+  text-transform: uppercase;
+}
+
+.hero-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+  font-size: clamp(3rem, 9vw, 8.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin-bottom: 2rem;
+  font-variation-settings: 'opsz' 144;
+}
+
+.hero-title em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent-bright);
+}
+
+.hero-title .strike {
+  position: relative;
+  display: inline-block;
+}
+
+.hero-title .strike::after {
+  content: '';
+  position: absolute;
+  left: -5%;
+  right: -5%;
+  top: 55%;
+  height: 4px;
+  background: var(--accent);
+  transform: rotate(-2deg);
+}
+
+.hero-sub {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 300;
+  color: var(--ink-dim);
+  max-width: 720px;
+  line-height: 1.6;
+  margin-bottom: 3rem;
+}
+
+.hero-meta {
+  display: flex;
+  gap: 3rem;
+  flex-wrap: wrap;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  border-top: 1px solid var(--rule);
+  padding-top: 1.5rem;
+}
+
+.hero-meta div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.hero-meta .value {
+  color: var(--ink);
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: 0.05em;
+}
+
+.hero-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  position: relative;
+  z-index: 2;
+  margin-top: 3rem;
+}
+
+.scroll-indicator {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.scroll-indicator::before {
+  content: '';
+  width: 40px;
+  height: 1px;
+  background: var(--ink-faint);
+}
+
+/* =========== TOC =========== */
+.toc {
+  padding: 8rem 2rem 4rem;
+  border-top: 1px solid var(--rule);
+  background: var(--bg);
+}
+
+.toc-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 4rem;
+}
+
+.toc-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  position: sticky;
+  top: 2rem;
+  height: fit-content;
+}
+
+.toc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.toc-item {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  gap: 2rem;
+  align-items: baseline;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--rule);
+  text-decoration: none;
+  color: var(--ink);
+  transition: all 0.3s ease;
+}
+
+.toc-item:hover {
+  padding-left: 1rem;
+  border-bottom-color: var(--accent);
+}
+
+.toc-item:hover .toc-title {
+  color: var(--accent-bright);
+}
+
+.toc-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.1em;
+}
+
+.toc-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.35rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  transition: color 0.3s;
+}
+
+.toc-arrow {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+}
+
+/* =========== SECTIONS =========== */
+section.content {
+  padding: 6rem 2rem;
+  border-top: 1px solid var(--rule);
+  position: relative;
+}
+
+.section-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 4rem;
+  margin-bottom: 4rem;
+  align-items: start;
+}
+
+.section-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: var(--accent-bright);
+  text-transform: uppercase;
+  padding-top: 1rem;
+  border-top: 2px solid var(--accent);
+  width: fit-content;
+}
+
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variation-settings: 'opsz' 144;
+}
+
+.section-title em {
+  font-style: italic;
+  color: var(--accent-bright);
+  font-weight: 400;
+}
+
+.section-body {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 4rem;
+}
+
+.section-body > .body-text {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--ink);
+}
+
+.section-body > .body-text p {
+  margin-bottom: 1.5rem;
+}
+
+.section-body > .body-text p:first-child::first-letter {
+  font-family: 'Fraunces', serif;
+  font-size: 4.5rem;
+  font-weight: 300;
+  float: left;
+  line-height: 0.9;
+  margin: 0.3rem 0.75rem 0 0;
+  color: var(--accent-bright);
+}
+
+/* =========== STAT CALLOUT =========== */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin: 3rem 0;
+}
+
+.stat-cell {
+  background: var(--bg);
+  padding: 2rem;
+  position: relative;
+}
+
+.stat-value {
+  font-family: 'Fraunces', serif;
+  font-size: 3.5rem;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--accent-bright);
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+  font-variation-settings: 'opsz' 144;
+}
+
+.stat-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+/* =========== PULL QUOTE =========== */
+.pull-quote {
+  margin: 4rem 0;
+  padding: 3rem;
+  border-left: 4px solid var(--accent);
+  background: linear-gradient(90deg, rgba(200, 53, 42, 0.05), transparent);
+  position: relative;
+}
+
+.pull-quote::before {
+  content: '"';
+  font-family: 'Fraunces', serif;
+  position: absolute;
+  top: -2rem;
+  left: 2rem;
+  font-size: 8rem;
+  color: var(--accent);
+  opacity: 0.3;
+  line-height: 1;
+}
+
+.pull-quote-text {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 1.6rem;
+  font-weight: 300;
+  line-height: 1.4;
+  color: var(--ink);
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+.pull-quote-cite {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+}
+
+/* =========== COMPARISON CARDS =========== */
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 2rem;
+  align-items: stretch;
+  margin: 3rem 0;
+}
+
+.comp-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--rule-light);
+  padding: 2.5rem;
+  position: relative;
+}
+
+.comp-card.accused {
+  border-top: 3px solid var(--accent);
+}
+
+.comp-card.comparison-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.comp-divider-text {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 2rem;
+  color: var(--ink-faint);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.comp-name {
+  font-family: 'Fraunces', serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.comp-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.comp-section {
+  margin-bottom: 1.5rem;
+}
+
+.comp-section-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.comp-section-value {
+  font-size: 1rem;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.comp-score {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: var(--bg);
+  border: 1px solid var(--rule-light);
+  text-align: center;
+}
+
+.comp-score-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.comp-score-value {
+  font-family: 'Fraunces', serif;
+  font-size: 3.5rem;
+  font-weight: 300;
+  line-height: 1;
+  font-variation-settings: 'opsz' 144;
+}
+
+.comp-score-value.high { color: var(--accent-bright); }
+.comp-score-value.low { color: #4caf50; }
+
+.comp-risk-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 0.3rem;
+}
+
+.comp-risk-label.high { color: var(--accent-bright); }
+.comp-risk-label.low { color: #4caf50; }
+
+/* =========== Q&A CARDS =========== */
+.qa-section {
+  padding: 6rem 2rem;
+  background: var(--paper);
+  color: var(--bg);
+  border-top: 1px solid var(--rule);
+}
+
+.qa-section .section-title {
+  color: var(--bg);
+}
+
+.qa-section .section-tag {
+  color: var(--accent);
+  border-top-color: var(--accent);
+}
+
+.qa-card {
+  background: var(--paper);
+  border: 1px solid var(--paper-dark);
+  padding: 3rem;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.qa-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--accent);
+}
+
+.qa-number {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.qa-question {
+  font-family: 'Fraunces', serif;
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--bg);
+  margin-bottom: 2rem;
+  letter-spacing: -0.01em;
+}
+
+.qa-question em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.qa-answer {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #2a2824;
+}
+
+.qa-answer p {
+  margin-bottom: 1.2rem;
+}
+
+.qa-answer strong {
+  font-weight: 600;
+  color: var(--bg);
+}
+
+.qa-answer ul {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0;
+}
+
+.qa-answer ul li {
+  padding: 0.8rem 0 0.8rem 2rem;
+  border-bottom: 1px dashed var(--paper-dark);
+  position: relative;
+}
+
+.qa-answer ul li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.qa-answer ul li:last-child {
+  border-bottom: none;
+}
+
+.qa-dimension {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--paper-dark);
+}
+
+.qa-dimension:last-child { border-bottom: none; }
+
+.qa-dim-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.5rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.qa-dim-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--bg);
+}
+
+.qa-dim-body {
+  color: #403d38;
+  font-size: 0.98rem;
+}
+
+/* =========== TIMELINE =========== */
+.timeline {
+  padding: 6rem 2rem;
+  background: var(--bg);
+  border-top: 1px solid var(--rule);
+}
+
+.timeline-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.timeline-track {
+  position: relative;
+  padding-left: 3rem;
+  margin-top: 4rem;
+}
+
+.timeline-track::before {
+  content: '';
+  position: absolute;
+  left: 0.75rem;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--accent), var(--rule) 50%, var(--rule));
+}
+
+.timeline-entry {
+  position: relative;
+  padding-bottom: 2.5rem;
+}
+
+.timeline-entry::before {
+  content: '';
+  position: absolute;
+  left: -2.55rem;
+  top: 0.5rem;
+  width: 12px;
+  height: 12px;
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+}
+
+.timeline-entry.key::before {
+  background: var(--accent-bright);
+  box-shadow: 0 0 20px var(--accent-bright);
+}
+
+.timeline-year {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  color: var(--accent-bright);
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+}
+
+.timeline-event {
+  font-family: 'Fraunces', serif;
+  font-size: 1.2rem;
+  color: var(--ink);
+  font-weight: 400;
+  line-height: 1.4;
+  margin-bottom: 0.3rem;
+}
+
+.timeline-desc {
+  color: var(--ink-dim);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* =========== FOOTER =========== */
+footer {
+  padding: 4rem 2rem 3rem;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--rule);
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 4rem;
+}
+
+.footer-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.8rem;
+  font-weight: 300;
+  line-height: 1.2;
+  color: var(--ink);
+  margin-bottom: 1rem;
+}
+
+.footer-title em {
+  font-style: italic;
+  color: var(--accent-bright);
+}
+
+.footer-text {
+  color: var(--ink-dim);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.footer-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.footer-item {
+  font-size: 0.9rem;
+  color: var(--ink-dim);
+  margin-bottom: 0.5rem;
+}
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: 3rem auto 0;
+  padding-top: 2rem;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+}
+
+/* =========== TABLE =========== */
+.law-table {
+  margin: 3rem 0;
+  border: 1px solid var(--paper-dark);
+  overflow: hidden;
+}
+
+.law-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  border-bottom: 1px solid var(--paper-dark);
+}
+
+.law-row:last-child { border-bottom: none; }
+
+.law-country {
+  background: rgba(200, 53, 42, 0.05);
+  padding: 1.5rem;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--bg);
+  border-right: 1px solid var(--paper-dark);
+}
+
+.law-content {
+  padding: 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #2a2824;
+}
+
+.law-content strong { color: var(--bg); }
+
+/* =========== RESPONSIVE =========== */
+@media (max-width: 900px) {
+  .hero { padding: 2rem 1.2rem 3rem; }
+  .toc-inner, .section-header, .section-body { grid-template-columns: 1fr; gap: 2rem; }
+  .toc-label, .section-tag { position: static; }
+  .comparison { grid-template-columns: 1fr; }
+  .comp-card.comparison-divider { display: none; }
+  .footer-inner { grid-template-columns: 1fr; gap: 2rem; }
+  .footer-bottom { flex-direction: column; gap: 1rem; }
+  .law-row { grid-template-columns: 1fr; }
+  .law-country { border-right: none; border-bottom: 1px solid var(--paper-dark); }
+  section.content { padding: 4rem 1.2rem; }
+  .qa-card { padding: 2rem 1.5rem; }
+  .qa-question { font-size: 1.5rem; }
+  .toc-item { grid-template-columns: 40px 1fr; }
+  .toc-arrow { display: none; }
+  .pull-quote { padding: 2rem 1.5rem; }
+  .pull-quote-text { font-size: 1.2rem; }
+}
+
+/* =========== ANIMATIONS =========== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-up {
+  opacity: 0;
+  animation: fadeUp 0.9s ease-out forwards;
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.3s; }
+.delay-3 { animation-delay: 0.5s; }
+.delay-4 { animation-delay: 0.7s; }
+
+</style>
+</head>
+<body>
+
+<!-- ========= HERO ========= -->
+<section class="hero">
+  <div class="hero-grid-bg"></div>
+
+  <div class="hero-top">
+    <div class="left">
+      <span><span class="dot"></span>CASE STUDY 03</span>
+      <span>AI ETHICS / CRIMINAL JUSTICE</span>
+    </div>
+    <div>DOSSIER — APR 2026</div>
+  </div>
+
+  <div class="hero-main">
+    <div class="hero-case fade-up delay-1">COMPAS Recidivism Algorithm — United States</div>
+    <h1 class="hero-title fade-up delay-2">
+      เมื่ออัลกอริทึม<br>
+      <em>ตัดสินชะตา</em><br>
+      <span class="strike">ความยุติธรรม</span>
+    </h1>
+    <p class="hero-sub fade-up delay-3">
+      ระบบที่ศาลสหรัฐฯ ใช้ประเมินว่าใครจะก่ออาชญากรรมซ้ำ —
+      เบื้องหลังคะแนน 1 ถึง 10 คือแบบสอบถาม 137 ข้อ, อัลกอริทึมที่เป็นความลับทางการค้า,
+      และอคติที่ถูกซักฟอกให้ดูเป็นคณิตศาสตร์
+    </p>
+
+    <div class="hero-meta fade-up delay-4">
+      <div>
+        <span>ประเภท</span>
+        <span class="value">Racial Bias + Opacity</span>
+      </div>
+      <div>
+        <span>เครื่องมือ</span>
+        <span class="value">Northpointe / Equivant</span>
+      </div>
+      <div>
+        <span>เปิดโปง</span>
+        <span class="value">ProPublica, พ.ค. 2016</span>
+      </div>
+      <div>
+        <span>คดีบรรทัดฐาน</span>
+        <span class="value">State v. Loomis (2016)</span>
+      </div>
+      <div>
+        <span>ผู้ได้รับผลกระทบ</span>
+        <span class="value">1,000,000+ ราย</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-bottom">
+    <div class="scroll-indicator">Scroll to investigate</div>
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--ink-faint); letter-spacing: 0.15em;">
+      01 / 05
+    </div>
+  </div>
+</section>
+
+<!-- ========= TOC ========= -->
+<section class="toc">
+  <div class="toc-inner">
+    <div class="toc-label">Contents<br>สารบัญ</div>
+    <div class="toc-list">
+      <a href="#overview" class="toc-item">
+        <span class="toc-num">01</span>
+        <span class="toc-title">ภาพรวมของกรณีศึกษา</span>
+        <span class="toc-arrow">→</span>
+      </a>
+      <a href="#ethics" class="toc-item">
+        <span class="toc-num">02</span>
+        <span class="toc-title">การละเมิดจริยธรรม — 6 มิติ</span>
+        <span class="toc-arrow">→</span>
+      </a>
+      <a href="#law" class="toc-item">
+        <span class="toc-num">03</span>
+        <span class="toc-title">กฎหมายและข้อกำหนด</span>
+        <span class="toc-arrow">→</span>
+      </a>
+      <a href="#impact" class="toc-item">
+        <span class="toc-num">04</span>
+        <span class="toc-title">ผลกระทบต่อผู้เกี่ยวข้อง</span>
+        <span class="toc-arrow">→</span>
+      </a>
+      <a href="#verdict" class="toc-item">
+        <span class="toc-num">05</span>
+        <span class="toc-title">โทษที่ได้รับ</span>
+        <span class="toc-arrow">→</span>
+      </a>
+      <a href="#timeline" class="toc-item">
+        <span class="toc-num">06</span>
+        <span class="toc-title">ลำดับเหตุการณ์สำคัญ</span>
+        <span class="toc-arrow">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ========= 01 OVERVIEW ========= -->
+<section class="content" id="overview">
+  <div class="section-inner">
+    <div class="section-header">
+      <div class="section-tag">01 — Overview</div>
+      <h2 class="section-title">ภาพรวมของ<br><em>กรณีศึกษา</em></h2>
+    </div>
+
+    <div class="section-body">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--ink-faint); letter-spacing: 0.1em;">
+        การสืบสวนของ ProPublica<br>
+        พฤษภาคม 2016
+      </div>
+
+      <div class="body-text">
+        <p>
+          <strong style="color: var(--accent-bright);">COMPAS</strong> ย่อมาจาก Correctional Offender Management Profiling for Alternative Sanctions
+          ซอฟต์แวร์ประเมินความเสี่ยงที่พัฒนาโดยบริษัท Northpointe (ปัจจุบันคือ Equivant) ตั้งแต่ปี 1998
+          ใช้ในศาลสหรัฐฯ หลายรัฐ — วิสคอนซิน, นิวยอร์ก, แคลิฟอร์เนีย, ฟลอริดา —
+          เพื่อประเมินโอกาสที่ผู้ต้องหาจะกลับมาก่ออาชญากรรมซ้ำ
+        </p>
+
+        <p>
+          ระบบทำงานผ่านแบบสอบถาม 137 ข้อที่ผสมคำถามเกี่ยวกับประวัติอาชญากรรม
+          (“เคยถูกจับกุมในคดี felony กี่ครั้ง?”) กับคำถามที่ดูไม่เกี่ยวข้อง
+          (“คุณรู้สึกท้อแท้เป็นบางครั้งไหม?” “คุณอยู่กับเพื่อนๆ หรือเปล่า?”)
+          ให้คะแนนความเสี่ยง 1-10: ต่ำ (1-4), กลาง (5-7), สูง (8-10)
+        </p>
+
+        <div class="stat-grid">
+          <div class="stat-cell">
+            <div class="stat-value">137</div>
+            <div class="stat-label">คำถามในแบบสอบถาม</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-value">61%</div>
+            <div class="stat-label">ความแม่นยำโดยรวม</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-value">20%</div>
+            <div class="stat-label">แม่นยำของการทำนายความรุนแรง</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-value">1M+</div>
+            <div class="stat-label">ผู้ถูกประเมินตั้งแต่ปี 2000</div>
+          </div>
+        </div>
+
+        <p>
+          ในเดือนพฤษภาคม 2016 สำนักข่าวสืบสวน <strong>ProPublica</strong> เผยแพร่รายงาน “Machine Bias”
+          วิเคราะห์ข้อมูลผู้ต้องหา 10,000+ คนใน Broward County ฟลอริดา
+          และติดตามว่าใครก่ออาชญากรรมซ้ำใน 2 ปี สิ่งที่พบคือ
+          <strong style="color: var(--accent-bright);">ความผิดพลาดของ COMPAS ไม่ได้กระจายเท่าๆ กัน</strong> —
+          มันเอนเอียงทางเชื้อชาติอย่างเป็นระบบ
+        </p>
+
+        <div class="pull-quote">
+          <p class="pull-quote-text">
+            คนผิวดำเกือบสองเท่ามีโอกาสถูกติดป้ายว่า “ความเสี่ยงสูง” ทั้งที่ไม่ก่ออาชญากรรมซ้ำจริง —
+            ในขณะที่คนผิวขาวมีโอกาสถูกติดป้ายว่า “เสี่ยงต่ำ” ทั้งที่กลับมาก่ออาชญากรรมจริง มากกว่าคนผิวดำ
+          </p>
+          <div class="pull-quote-cite">ProPublica — Machine Bias, 23 พ.ค. 2016</div>
+        </div>
+
+        <h3 style="font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 400; margin: 3rem 0 1.5rem; color: var(--ink);">
+          กรณีศึกษาจริง — Borden vs Prater
+        </h3>
+
+        <p>
+          สองเหตุการณ์ขโมยของมูลค่าใกล้เคียงกันใน Broward County —
+          ผลการประเมิน COMPAS สวนทางกับความเป็นจริงอย่างสิ้นเชิง
+        </p>
+
+        <div class="comparison">
+          <div class="comp-card accused">
+            <div class="comp-name">Brisha Borden</div>
+            <div class="comp-meta">หญิง ผิวดำ · 18 ปี · 2014</div>
+
+            <div class="comp-section">
+              <div class="comp-section-label">เหตุการณ์</div>
+              <div class="comp-section-value">ขโมยจักรยานเด็ก + สกูตเตอร์ มูลค่า $80 (ทิ้งไว้เมื่อเจ้าของมา)</div>
+            </div>
+
+            <div class="comp-section">
+              <div class="comp-section-label">ประวัติก่อนหน้า</div>
+              <div class="comp-section-value">แค่ juvenile misdemeanors เล็กน้อย</div>
+            </div>
+
+            <div class="comp-section">
+              <div class="comp-section-label">เหตุการณ์หลังจากนั้น 2 ปี</div>
+              <div class="comp-section-value">ไม่ก่ออาชญากรรมใหม่เลย</div>
+            </div>
+
+            <div class="comp-score">
+              <div class="comp-score-label">COMPAS Score</div>
+              <div class="comp-score-value high">8</div>
+              <div class="comp-risk-label high">High Risk</div>
+            </div>
+          </div>
+
+          <div class="comp-card comparison-divider">
+            <div class="comp-divider-text">versus</div>
+          </div>
+
+          <div class="comp-card accused">
+            <div class="comp-name">Vernon Prater</div>
+            <div class="comp-meta">ชาย ผิวขาว · 41 ปี · 2013</div>
+
+            <div class="comp-section">
+              <div class="comp-section-label">เหตุการณ์</div>
+              <div class="comp-section-value">ขโมยเครื่องมือจาก Home Depot มูลค่า $86.35</div>
+            </div>
+
+            <div class="comp-section">
+              <div class="comp-section-label">ประวัติก่อนหน้า</div>
+              <div class="comp-section-value">เคยปล้นด้วยอาวุธ 2 ครั้ง ติดคุก 5 ปี</div>
+            </div>
+
+            <div class="comp-section">
+              <div class="comp-section-label">เหตุการณ์หลังจากนั้น 2 ปี</div>
+              <div class="comp-section-value">บุกคลังสินค้าขโมย $7,700 ติดคุก 8 ปี</div>
+            </div>
+
+            <div class="comp-score">
+              <div class="comp-score-label">COMPAS Score</div>
+              <div class="comp-score-value low">3</div>
+              <div class="comp-risk-label low">Low Risk</div>
+            </div>
+          </div>
+        </div>
+
+        <p style="margin-top: 2rem;">
+          ผลลัพธ์จริง? Borden ถูกเพิ่มเงินประกันจาก $0 เป็น $1,000 ต้องอยู่ในคุก 2 คืน —
+          ทั้งที่ไม่เคยก่ออาชญากรรมอีกเลย ส่วน Prater ได้รับการปฏิบัติผ่อนปรนกว่า
+          แล้วกลับไปก่อคดีใหม่ที่หนักกว่าเดิม
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========= 02 ETHICS VIOLATION ========= -->
+<section class="qa-section" id="ethics">
+  <div class="section-inner">
+    <div class="section-header">
+      <div class="section-tag">02 — Ethics</div>
+      <h2 class="section-title">การละเมิด<em>จริยธรรม</em>อย่างไร</h2>
+    </div>
+
+    <div class="qa-card">
+      <div class="qa-number">Q. คำถามที่ 2</div>
+      <div class="qa-question">COMPAS <em>ละเมิดจริยธรรม</em>ใน 6 มิติอย่างไร</div>
+
+      <div class="qa-answer">
+        <div class="qa-dimension">
+          <div class="qa-dim-num">01</div>
+          <div>
+            <div class="qa-dim-title">Algorithmic Discrimination</div>
+            <div class="qa-dim-body">แม้ไม่ถามเชื้อชาติโดยตรง แต่ใช้ <strong>proxy variables</strong> เช่น เขตที่อยู่อาศัย, ประวัติครอบครัว, สถานะการจ้างงาน, ระดับการศึกษา ซึ่งล้วนสัมพันธ์กับเชื้อชาติในบริบทสหรัฐฯ — ผลคือ<strong>ฟอก bias ทางเชื้อชาติให้กลายเป็น "คณิตศาสตร์เป็นกลาง"</strong></div>
+          </div>
+        </div>
+
+        <div class="qa-dimension">
+          <div class="qa-dim-num">02</div>
+          <div>
+            <div class="qa-dim-title">Lack of Transparency</div>
+            <div class="qa-dim-body">อัลกอริทึมเป็น <strong>trade secret</strong> ผู้ต้องหาและทนายความไม่สามารถตรวจสอบวิธีคำนวณคะแนน ทำให้โต้แย้งความถูกต้องไม่ได้ — ขัดหลักการพื้นฐานของระบบยุติธรรมที่ว่าการกล่าวหาต้องตรวจสอบและโต้แย้งได้</div>
+          </div>
+        </div>
+
+        <div class="qa-dimension">
+          <div class="qa-dim-num">03</div>
+          <div>
+            <div class="qa-dim-title">Garbage In, Garbage Out</div>
+            <div class="qa-dim-body">ข้อมูลฝึกมาจากระบบยุติธรรมสหรัฐฯ ที่<strong>ลำเอียงต่อคนผิวดำอยู่แล้ว</strong> (คนผิวดำมีสัดส่วนในเรือนจำสูงกว่าประชากร 5.5 เท่าของคนขาว) — AI จึงแค่<strong>ขยาย bias ที่มีอยู่เดิม ไม่ได้ขจัดมัน</strong></div>
+          </div>
+        </div>
+
+        <div class="qa-dimension">
+          <div class="qa-dim-num">04</div>
+          <div>
+            <div class="qa-dim-title">Individual Justice vs Group Statistics</div>
+            <div class="qa-dim-body">คะแนนอิง<strong>สถิติกลุ่ม</strong> แต่ใช้ตัดสิน<strong>ผู้ต้องหาแต่ละคน</strong> — ขัดหลักการ "แต่ละคนต้องถูกตัดสินจากการกระทำของตนเอง ไม่ใช่จากกลุ่มที่ตนสังกัด" ที่เป็นหัวใจของกระบวนการยุติธรรม</div>
+          </div>
+        </div>
+
+        <div class="qa-dimension">
+          <div class="qa-dim-num">05</div>
+          <div>
+            <div class="qa-dim-title">Automation Bias</div>
+            <div class="qa-dim-body">ผู้พิพากษามักเชื่อคะแนน AI มากเกินไป (anchoring bias) กรณี Paul Zilly — ผู้พิพากษายอมรับว่า "ถ้าไม่มี COMPAS ผมจะให้โทษ 1 ปี 6 เดือน" แต่เพราะคะแนน COMPAS จึงให้ 2 ปี <strong>การโอนความรับผิดชอบทางจริยธรรมให้เครื่องจักร</strong></div>
+          </div>
+        </div>
+
+        <div class="qa-dimension">
+          <div class="qa-dim-num">06</div>
+          <div>
+            <div class="qa-dim-title">Dignity & Due Process</div>
+            <div class="qa-dim-body">การตัดสินเรื่องเสรีภาพของมนุษย์ด้วย<strong>กล่องดำที่โต้แย้งไม่ได้</strong> ละเมิดศักดิ์ศรีความเป็นมนุษย์ — งาน Dressel &amp; Farid (2018) พบว่าคนทั่วไปที่ไม่มีความรู้ด้านยุติธรรมทำนายได้แม่นยำเทียบเท่า COMPAS (65-67%) และ linear classifier 2 ตัวแปรก็ทำได้เท่ากัน — แสดงว่า COMPAS <strong>ไม่ได้วิเศษกว่าที่อ้าง</strong></div>
+          </div>
+        </div>
+
+        <p style="margin-top: 3rem; font-family: 'Fraunces', serif; font-style: italic; font-size: 1.2rem; color: var(--accent); border-top: 2px solid var(--accent); padding-top: 2rem;">
+          แก่นของการละเมิด: การใช้ระบบที่อ้างว่า "objective" และ "scientific" มาตัดสินชะตาคน —
+          โดยที่ระบบนั้นมีอคติฝังอยู่ ขาดความโปร่งใส และไม่สามารถตรวจสอบได้
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========= 03 LAW ========= -->
+<section class="qa-section" id="law" style="background: #e8e0cc;">
+  <div class="section-inner">
+    <div class="section-header">
+      <div class="section-tag">03 — Law</div>
+      <h2 class="section-title">กฎหมายและ<em>ข้อกำหนด</em></h2>
+    </div>
+
+    <div class="qa-card">
+      <div class="qa-number">Q. คำถามที่ 3</div>
+      <div class="qa-question">การละเมิดดังกล่าว <em>มีข้อกำหนดในกฎหมาย</em>หรือไม่</div>
+
+      <div class="qa-answer">
+        <p>สถานการณ์ทางกฎหมาย<strong>แตกต่างกันมากระหว่างแต่ละประเทศ</strong> — สหรัฐฯ ยังไม่มีกฎหมายเฉพาะ ในขณะที่ EU ผลักดัน AI Act ออกมาเพื่อแก้ปัญหาประเภทนี้โดยเฉพาะ</p>
+
+        <div class="law-table">
+          <div class="law-row">
+            <div class="law-country">🇺🇸 สหรัฐอเมริกา</div>
+            <div class="law-content">
+              <strong>ยังไม่มีกฎหมายเฉพาะ</strong> มีเพียงหลักรัฐธรรมนูญ: <strong>Due Process Clause</strong> (แก้ไขที่ 5, 14) และ <strong>Equal Protection Clause</strong> (แก้ไขที่ 14) / คดีบรรทัดฐาน: <strong>State v. Loomis, 881 N.W.2d 749 (Wis. 2016)</strong> — ศาลอนุญาตให้ใช้ COMPAS ได้หาก "ใช้อย่างเหมาะสม" พร้อมคำเตือน 4 ข้อ / ศาลฎีกาสหรัฐฯ ปฏิเสธรับคดีในปี 2017 (<em>Loomis v. Wisconsin, 137 S. Ct. 2290</em>) / ระดับรัฐบาลกลาง: Executive Order 14110 (2023) เป็นแค่คำสั่งให้ทำรายงาน / NIST AI RMF เป็น voluntary framework ไม่บังคับ
+            </div>
+          </div>
+
+          <div class="law-row">
+            <div class="law-country">🇪🇺 สหภาพยุโรป</div>
+            <div class="law-content">
+              <strong>EU AI Act (Regulation 2024/1689)</strong> — กฎหมาย AI ฉบับสมบูรณ์ฉบับแรกของโลก
+              <br><br>
+              <strong>Article 5(1)(d) — ข้อห้าม:</strong> ห้ามใช้ AI เพื่อประเมินความเสี่ยงอาชญากรรมของบุคคล โดยอิงเพียง profiling หรือ personality traits — <strong>COMPAS ในรูปปัจจุบันน่าจะผิดกฎหมาย EU</strong>
+              <br><br>
+              <strong>Annex III — High-Risk Systems:</strong> ระบบ AI ในภาคยุติธรรมถูกจัดเป็น high-risk ต้องมีเอกสารเทคนิค, conformity assessment, bias monitoring, human oversight, transparency, post-market monitoring
+              <br><br>
+              <strong>GDPR Article 22:</strong> สิทธิไม่ถูกตัดสินชะตาด้วยระบบอัตโนมัติเพียงอย่างเดียว
+            </div>
+          </div>
+
+          <div class="law-row">
+            <div class="law-country">🇨🇦 แคนาดา</div>
+            <div class="law-content">
+              <strong>Ewert v. Canada (2018)</strong> — ศาลฎีกาแคนาดาตัดสินต่างจากวิสคอนซิน: เครื่องมือประเมินความเสี่ยงที่ไม่มีการ validate กับกลุ่มชนพื้นเมือง <strong>ใช้กับกลุ่มนั้นไม่ได้</strong> "ความเท่าเทียมเนื้อหาต้องมากกว่าเพียงแค่การปฏิบัติเท่าเทียมกัน"
+            </div>
+          </div>
+
+          <div class="law-row">
+            <div class="law-country">🇹🇭 ประเทศไทย</div>
+            <div class="law-content">
+              <strong>ยังไม่มีกฎหมายเฉพาะ</strong> ควบคุม AI ในระบบยุติธรรม มีเพียง <strong>พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA) พ.ศ. 2562</strong> ครอบคลุมการประมวลผลข้อมูลส่วนบุคคลบางส่วน / กำลังมีร่าง <strong>พ.ร.บ. การส่งเสริมและกำกับดูแลการใช้ปัญญาประดิษฐ์</strong> อยู่ในขั้นตอน
+            </div>
+          </div>
+        </div>
+
+        <p><strong>สรุป:</strong> การละเมิดของ COMPAS <strong>ไม่ผิดกฎหมายในสหรัฐฯ</strong> (ที่ใช้งานจริง) แต่<strong>น่าจะผิดกฎหมาย EU AI Act</strong> ถ้าถูกนำไปขายใน EU หลังสิงหาคม 2026 — นี่คือช่องว่างทางกฎหมายที่ทำให้ผู้พัฒนา AI ยังทำอะไรก็ได้ในสหรัฐฯ</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========= 04 IMPACT ========= -->
+<section class="qa-section" id="impact">
+  <div class="section-inner">
+    <div class="section-header">
+      <div class="section-tag">04 — Impact</div>
+      <h2 class="section-title">ผลกระทบต่อ<em>ผู้เกี่ยวข้อง</em></h2>
+    </div>
+
+    <div class="qa-card">
+      <div class="qa-number">Q. คำถามที่ 4</div>
+      <div class="qa-question">ส่งผลต่อ<em>ผู้ที่เกี่ยวข้อง</em>อย่างไร</div>
+
+      <div class="qa-answer">
+
+        <div class="qa-dimension">
+          <div class="qa-dim-num">👤</div>
+          <div>
+            <div class="qa-dim-title">ผู้ต้องหา — ผู้รับผลร้ายแรงที่สุด</div>
+            <div class="qa-dim-body">
+              <strong>เสรีภาพ:</strong> ถูกจำคุกนานกว่าที่ควร / ถูกปฏิเสธประกันตัว (เช่น Borden กับ Jones ที่ถูกขัง 2 คืน)<br>
+              <strong>การเงิน:</strong> ประกันตัวสูงขึ้น ($0 → $1,000), ค่าทนาย, สูญเสียรายได้<br>
+              <strong>อนาคต:</strong> โอกาสงาน, สิทธิลงคะแนน, ที่อยู่อาศัยได้รับผลกระทบ<br>
+              <strong>ครอบครัว:</strong> เด็กขาดพ่อแม่, คู่สมรสขาดคู่<br>
+              <strong>สุขภาพจิต:</strong> Jones บอก "We literally sat there and cried"<br>
+              <strong>ระดับกลุ่ม:</strong> คนผิวดำถูกประเมินผิดว่าเสี่ยงสูงเป็น 2 เท่า — กลุ่มคนผิวดำโดยรวมรับภาระความอยุติธรรมหนักกว่า
+            </div>
+          </div>
+        </div>
+
+        <div class="qa-dimension">
+          <div class="qa-dim-num">⚖️</div>
+          <div>
+            <div class="qa-dim-title">ผู้พิพากษา</div>
+            <div class="qa-dim-body">
+              <strong>Anchoring Bias:</strong> เชื่อคะแนน AI เกินไป (เช่น Judge Babler ในคดี Zilly)<br>
+              <strong>โอนความรับผิดชอบ:</strong> "AI บอกว่าเสี่ยงสูง" กลายเป็นข้ออ้าง<br>
+              <strong>ความขัดแย้งทางจริยธรรม:</strong> ผู้พิพากษาที่รู้ว่าระบบมี bias แต่กฎหมายอนุญาตให้ใช้<br>
+              <strong>ความน่าเชื่อถือของศาล:</strong> สาธารณชนมองระบบเป็น "racist algorithm"
+            </div>
+          </div>
+        </div>
+
+        <div class="qa-dimension">
+          <div class="qa-dim-num">🌍</div>
+          <div>
+            <div class="qa-dim-title">สังคมโดยรวม</div>
+            <div class="qa-dim-body">
+              <strong>Mass Incarceration:</strong> สหรัฐฯ มีอัตราจำคุกสูงที่สุดในโลก COMPAS ทำให้ปัญหาซับซ้อนขึ้น<br>
+              <strong>Feedback Loop:</strong> คนผิวดำถูกประเมินเสี่ยงสูง → ถูกจับบ่อยขึ้น → ข้อมูลยืนยันว่า "เสี่ยงจริง" → อัลกอริทึมลำเอียงมากขึ้น<br>
+              <strong>ความไว้วางใจในระบบยุติธรรมลดลง:</strong> ชุมชนคนผิวสีสูญเสียความเชื่อมั่น<br>
+              <strong>Norm Entrenchment:</strong> การเลือกปฏิบัติทางเชื้อชาติถูก "อนุมัติ" โดย "วิทยาศาสตร์"
+            </div>
+          </div>
+        </div>
+
+        <div class="qa-dimension">
+          <div class="qa-dim-num">🏢</div>
+          <div>
+            <div class="qa-dim-title">บริษัท Northpointe / Equivant</div>
+            <div class="qa-dim-body">
+              <strong>ชื่อเสียง:</strong> ถูกวิพากษ์วิจารณ์ทั่วโลก ต้องเปลี่ยนชื่อเป็น Equivant ในปี 2017 (อาจเป็นการ rebrand เพื่อล้างภาพลักษณ์)<br>
+              <strong>ธุรกิจ:</strong> ยังขายได้เพราะไม่มีกฎหมายสหรัฐฯ ห้าม<br>
+              <strong>การฟ้องร้อง:</strong> ยังไม่ถูกฟ้องในลักษณะ class action สำคัญ เพราะ proprietary algorithm ป้องกันการพิสูจน์ causation
+            </div>
+          </div>
+        </div>
+
+        <div class="qa-dimension">
+          <div class="qa-dim-num">🤖</div>
+          <div>
+            <div class="qa-dim-title">อุตสาหกรรม AI โดยรวม</div>
+            <div class="qa-dim-body">
+              <strong>Wake-up Call:</strong> กรณี COMPAS เป็นจุดเปลี่ยนให้วงการ AI หันมาสนใจ Fairness, Accountability, Transparency (FAccT)<br>
+              <strong>ACM FAT Conference:</strong> เริ่มขึ้นในปี 2015 เพื่อแก้ปัญหาเหล่านี้<br>
+              <strong>ตำราเรียน:</strong> เป็นตัวอย่างในทุกตำรา AI ethics ทำให้นักพัฒนารุ่นใหม่ตระหนัก
+            </div>
+          </div>
+        </div>
+
+        <div class="qa-dimension">
+          <div class="qa-dim-num">📰</div>
+          <div>
+            <div class="qa-dim-title">ProPublica และวงการข่าว</div>
+            <div class="qa-dim-body">
+              <strong>รางวัล Pulitzer:</strong> เป็นตัวอย่างงานข่าวเชิงสืบสวนยุค AI<br>
+              <strong>Open Audit:</strong> ProPublica เปิดเผย dataset ให้นักวิจัยทั่วโลกตรวจสอบได้
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========= 05 VERDICT ========= -->
+<section class="content" id="verdict" style="background: var(--bg);">
+  <div class="section-inner">
+    <div class="section-header">
+      <div class="section-tag">05 — Verdict</div>
+      <h2 class="section-title">มีการ<em>ตัดสินโทษ</em>หรือไม่</h2>
+    </div>
+
+    <div class="section-body">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--ink-faint); letter-spacing: 0.1em;">
+        สถานะ<br>
+        <span style="color: var(--accent-bright);">NO CONVICTION</span>
+      </div>
+
+      <div class="body-text">
+
+        <div class="pull-quote">
+          <p class="pull-quote-text">
+            นี่คือส่วนที่น่าหดหู่ที่สุดของกรณีนี้ —<br>
+            ไม่มีใครถูกลงโทษตามกฎหมายเลย<br>
+            คนที่รับโทษคือผู้ต้องหา
+          </p>
+          <div class="pull-quote-cite">The Verdict · 2016–2026</div>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-cell">
+            <div class="stat-value">0</div>
+            <div class="stat-label">โทษต่อ Northpointe/Equivant</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-value">0</div>
+            <div class="stat-label">โทษต่อผู้พิพากษา</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-value">6 ปี</div>
+            <div class="stat-label">โทษต่อ Eric Loomis</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-value">€35M</div>
+            <div class="stat-label">โทษปรับสูงสุดใต้ EU AI Act</div>
+          </div>
+        </div>
+
+        <h3 style="font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 400; margin: 3rem 0 1.5rem; color: var(--ink);">
+          โทษต่อ Northpointe / Equivant
+        </h3>
+        <ul style="list-style: none; padding: 0;">
+          <li style="padding: 0.8rem 0 0.8rem 2rem; border-bottom: 1px dashed var(--rule); position: relative;">
+            <span style="position: absolute; left: 0; color: var(--accent-bright);">—</span>
+            <strong>ไม่ถูกฟ้องอาญา</strong> — ไม่มีกฎหมายสหรัฐฯ ที่ทำให้การพัฒนาอัลกอริทึมมี bias เป็นอาชญากรรม
+          </li>
+          <li style="padding: 0.8rem 0 0.8rem 2rem; border-bottom: 1px dashed var(--rule); position: relative;">
+            <span style="position: absolute; left: 0; color: var(--accent-bright);">—</span>
+            <strong>ไม่ถูกฟ้องแพ่งสำเร็จ</strong> — trade secret ป้องกันการพิสูจน์ causation
+          </li>
+          <li style="padding: 0.8rem 0 0.8rem 2rem; border-bottom: 1px dashed var(--rule); position: relative;">
+            <span style="position: absolute; left: 0; color: var(--accent-bright);">—</span>
+            <strong>ไม่ถูกปรับ</strong> — ไม่มีหน่วยงานกำกับดูแลที่มีอำนาจ
+          </li>
+          <li style="padding: 0.8rem 0 0.8rem 2rem; position: relative;">
+            <span style="position: absolute; left: 0; color: var(--accent-bright);">—</span>
+            <strong>แค่เปลี่ยนชื่อ</strong> — จาก Northpointe เป็น Equivant ในปี 2017 และยังขาย COMPAS อยู่จนถึงวันนี้
+          </li>
+        </ul>
+
+        <h3 style="font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 400; margin: 3rem 0 1.5rem; color: var(--ink);">
+          โทษต่อ Eric Loomis (ผู้ต้องหา)
+        </h3>
+        <p>ถูกตัดสินจำคุก 6 ปี + ติดตามอีก 5 ปี — ศาลฎีกาสหรัฐฯ ปฏิเสธรับคดีในปี 2017 ทำให้คำพิพากษาเป็นที่สุด Loomis ไม่ได้รับการเยียวยาใดๆ</p>
+
+        <h3 style="font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 400; margin: 3rem 0 1.5rem; color: var(--ink);">
+          "Loomis Safeguards" — เงื่อนไขที่ใกล้เคียงโทษที่สุด
+        </h3>
+        <p>สิ่งที่ "คล้าย" โทษ คือเงื่อนไขที่ศาลวิสคอนซินกำหนด (ไม่ใช่โทษ แต่เป็นข้อจำกัด):</p>
+        <ul style="list-style: none; padding: 0; margin: 1.5rem 0;">
+          <li style="padding: 0.8rem 0 0.8rem 2rem; border-bottom: 1px dashed var(--rule); position: relative;">
+            <span style="position: absolute; left: 0; color: var(--accent-bright);">1.</span>
+            คำเตือน 5 ข้อต้องแนบกับทุก PSI (Presentence Investigation Report)
+          </li>
+          <li style="padding: 0.8rem 0 0.8rem 2rem; border-bottom: 1px dashed var(--rule); position: relative;">
+            <span style="position: absolute; left: 0; color: var(--accent-bright);">2.</span>
+            ห้ามใช้ COMPAS ตัดสินเรื่องจำคุก/ไม่จำคุก
+          </li>
+          <li style="padding: 0.8rem 0 0.8rem 2rem; border-bottom: 1px dashed var(--rule); position: relative;">
+            <span style="position: absolute; left: 0; color: var(--accent-bright);">3.</span>
+            ห้ามใช้กำหนดความรุนแรงของโทษ
+          </li>
+          <li style="padding: 0.8rem 0 0.8rem 2rem; position: relative;">
+            <span style="position: absolute; left: 0; color: var(--accent-bright);">4.</span>
+            ต้องอธิบายปัจจัยอื่นนอกจาก COMPAS
+          </li>
+        </ul>
+
+        <h3 style="font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 400; margin: 3rem 0 1.5rem; color: var(--ink);">
+          โทษในอนาคต — ถ้า COMPAS เข้า EU
+        </h3>
+        <p>ภายใต้ EU AI Act (บังคับใช้เต็มรูปแบบสิงหาคม 2026–2027):</p>
+        <ul style="list-style: none; padding: 0; margin: 1.5rem 0;">
+          <li style="padding: 0.8rem 0 0.8rem 2rem; border-bottom: 1px dashed var(--rule); position: relative;">
+            <span style="position: absolute; left: 0; color: var(--accent-bright);">→</span>
+            ถ้าเข้าข่าย Article 5(1)(d) (prohibited) — <strong>ปรับสูงสุด €35 ล้าน หรือ 7% ของรายได้ทั่วโลก</strong>
+          </li>
+          <li style="padding: 0.8rem 0 0.8rem 2rem; border-bottom: 1px dashed var(--rule); position: relative;">
+            <span style="position: absolute; left: 0; color: var(--accent-bright);">→</span>
+            ถ้าเป็น high-risk แต่ไม่ compliance — <strong>ปรับสูงสุด €15 ล้าน หรือ 3%</strong>
+          </li>
+          <li style="padding: 0.8rem 0 0.8rem 2rem; position: relative;">
+            <span style="position: absolute; left: 0; color: var(--accent-bright);">→</span>
+            ถ้าให้ข้อมูลเท็จ — <strong>ปรับสูงสุด €7.5 ล้าน หรือ 1%</strong>
+          </li>
+        </ul>
+
+        <div class="pull-quote" style="margin-top: 4rem;">
+          <p class="pull-quote-text">
+            กรณี COMPAS แสดงช่องว่างกฎหมายที่ร้ายแรง —
+            ระบบ AI ที่ตัดสินชะตาคน สามารถมี bias, ขาดความโปร่งใส,
+            และทำร้ายคนหลักพันหลักหมื่นได้ โดยที่ผู้สร้างไม่ต้องรับผิดชอบใดๆ
+          </p>
+          <div class="pull-quote-cite">บทสรุป · The Accountability Gap</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========= TIMELINE ========= -->
+<section class="timeline" id="timeline">
+  <div class="timeline-inner">
+    <div class="section-tag" style="margin-bottom: 1rem;">06 — Timeline</div>
+    <h2 class="section-title">ลำดับเหตุการณ์<em>สำคัญ</em></h2>
+
+    <div class="timeline-track">
+      <div class="timeline-entry">
+        <div class="timeline-year">1998</div>
+        <div class="timeline-event">Northpointe สร้าง COMPAS</div>
+        <div class="timeline-desc">Tim Brennan และ Dave Wells พัฒนาเครื่องมือประเมินความเสี่ยงรุ่น 4</div>
+      </div>
+
+      <div class="timeline-entry">
+        <div class="timeline-year">2000</div>
+        <div class="timeline-event">เริ่มใช้ส่วนประกอบการทำนายการกระทำผิดซ้ำ</div>
+        <div class="timeline-desc">เริ่มนำไปใช้ในศาลจริง</div>
+      </div>
+
+      <div class="timeline-entry">
+        <div class="timeline-year">2008</div>
+        <div class="timeline-event">Broward County เริ่มใช้ COMPAS</div>
+        <div class="timeline-desc">ใน pretrial hearings เพื่อแก้ปัญหาความแออัดในเรือนจำ</div>
+      </div>
+
+      <div class="timeline-entry">
+        <div class="timeline-year">2012</div>
+        <div class="timeline-event">Wisconsin ใช้ COMPAS ทั่วทั้งรัฐ</div>
+        <div class="timeline-desc">Department of Corrections นำมาใช้ในระดับรัฐ</div>
+      </div>
+
+      <div class="timeline-entry">
+        <div class="timeline-year">กุมภาพันธ์ 2013</div>
+        <div class="timeline-event">Eric Loomis ถูกจับ</div>
+        <div class="timeline-desc">เหตุยิงจากรถใน La Crosse, Wisconsin</div>
+      </div>
+
+      <div class="timeline-entry">
+        <div class="timeline-year">ฤดูร้อน 2013</div>
+        <div class="timeline-event">Vernon Prater ถูกจับฐานขโมย $86</div>
+        <div class="timeline-desc">มีประวัติปล้นด้วยอาวุธ แต่ได้คะแนน COMPAS เสี่ยงต่ำ (3)</div>
+      </div>
+
+      <div class="timeline-entry">
+        <div class="timeline-year">ฤดูใบไม้ผลิ 2014</div>
+        <div class="timeline-event">Brisha Borden ถูกจับฐานขโมยจักรยานเด็ก $80</div>
+        <div class="timeline-desc">ไม่มีประวัติร้ายแรง แต่ได้คะแนน COMPAS เสี่ยงสูง (8)</div>
+      </div>
+
+      <div class="timeline-entry key">
+        <div class="timeline-year">23 พฤษภาคม 2016</div>
+        <div class="timeline-event">ProPublica เผยแพร่ "Machine Bias"</div>
+        <div class="timeline-desc">รายงานสืบสวนที่เปลี่ยนวงการ AI ethics ตลอดไป</div>
+      </div>
+
+      <div class="timeline-entry key">
+        <div class="timeline-year">13 กรกฎาคม 2016</div>
+        <div class="timeline-event">Wisconsin Supreme Court ตัดสิน Loomis</div>
+        <div class="timeline-desc">State v. Loomis, 881 N.W.2d 749 — ยอมให้ใช้ COMPAS ได้ภายใต้เงื่อนไข</div>
+      </div>
+
+      <div class="timeline-entry">
+        <div class="timeline-year">มกราคม 2017</div>
+        <div class="timeline-event">Northpointe เปลี่ยนชื่อเป็น Equivant</div>
+        <div class="timeline-desc">Rebrand หลังถูกวิจารณ์อย่างหนัก</div>
+      </div>
+
+      <div class="timeline-entry">
+        <div class="timeline-year">26 มิถุนายน 2017</div>
+        <div class="timeline-event">ศาลฎีกาสหรัฐฯ ปฏิเสธ Loomis v. Wisconsin</div>
+        <div class="timeline-desc">137 S. Ct. 2290 — ปฏิเสธ certiorari คำพิพากษาเป็นที่สุด</div>
+      </div>
+
+      <div class="timeline-entry">
+        <div class="timeline-year">มกราคม 2018</div>
+        <div class="timeline-event">Dressel &amp; Farid ตีพิมพ์ใน Science Advances</div>
+        <div class="timeline-desc">พบว่า COMPAS ไม่แม่นยำกว่าคนทั่วไป และ linear classifier 2 ตัวแปรทำได้เท่ากัน</div>
+      </div>
+
+      <div class="timeline-entry">
+        <div class="timeline-year">2018</div>
+        <div class="timeline-event">Ewert v. Canada</div>
+        <div class="timeline-desc">ศาลฎีกาแคนาดาตัดสินว่าเครื่องมือไม่ validate กับกลุ่มใด ใช้กับกลุ่มนั้นไม่ได้</div>
+      </div>
+
+      <div class="timeline-entry key">
+        <div class="timeline-year">13 มิถุนายน 2024</div>
+        <div class="timeline-event">EU AI Act ประกาศใช้</div>
+        <div class="timeline-desc">Regulation 2024/1689 — กฎหมาย AI ฉบับสมบูรณ์ฉบับแรกของโลก</div>
+      </div>
+
+      <div class="timeline-entry">
+        <div class="timeline-year">2024</div>
+        <div class="timeline-event">งานวิจัย Broward County</div>
+        <div class="timeline-desc">พบ COMPAS ลดการคุมขังโดยรวม แต่<strong style="color: var(--accent-bright);">ขยาย racial disparities</strong></div>
+      </div>
+
+      <div class="timeline-entry key">
+        <div class="timeline-year">สิงหาคม 2026</div>
+        <div class="timeline-event">EU AI Act บังคับใช้เต็มรูปแบบ</div>
+        <div class="timeline-desc">High-risk AI systems ต้อง compliance ครบทุกข้อ</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========= FOOTER ========= -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-title">
+        เมื่อ AI ตัดสินชะตามนุษย์<br>
+        <em>กฎหมายต้องตามให้ทัน</em>
+      </div>
+      <p class="footer-text">
+        กรณี COMPAS คือบทเรียนที่โลกต้องเรียนรู้ — ว่าเทคโนโลยีไม่เคยเป็นกลาง
+        มันสะท้อนสังคมที่สร้างมัน และถ้าสังคมนั้นลำเอียง เทคโนโลยีก็จะลำเอียงตาม
+        เพียงแต่ซักฟอกให้ดูเป็นวิทยาศาสตร์
+      </p>
+    </div>
+
+    <div>
+      <div class="footer-label">แหล่งข้อมูลหลัก</div>
+      <div class="footer-item">ProPublica (2016)</div>
+      <div class="footer-item">Wisconsin Supreme Court</div>
+      <div class="footer-item">Science Advances (2018)</div>
+      <div class="footer-item">EU AI Act Official</div>
+      <div class="footer-item">ACLU / EPIC</div>
+    </div>
+
+    <div>
+      <div class="footer-label">บุคคลสำคัญ</div>
+      <div class="footer-item">Eric Loomis — จำเลย</div>
+      <div class="footer-item">Brisha Borden — ผู้ได้รับผลกระทบ</div>
+      <div class="footer-item">Julia Dressel — นักวิจัย</div>
+      <div class="footer-item">Hany Farid — Dartmouth</div>
+      <div class="footer-item">Tim Brennan — ผู้สร้าง COMPAS</div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div>Dossier compiled — April 2026</div>
+    <div>Case Study 03 / AI Ethics</div>
+    <div>For educational purposes</div>
+  </div>
+</footer>
+
+<script>
+// Intersection observer for fade-in animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.qa-card, .comp-card, .timeline-entry, .stat-cell, .pull-quote, .law-row').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(30px)';
+  el.style.transition = 'opacity 0.8s ease-out, transform 0.8s ease-out';
+  observer.observe(el);
+});
+</script>
+
+</body>
+</html>
